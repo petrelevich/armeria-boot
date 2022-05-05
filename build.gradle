@@ -1,0 +1,49 @@
+plugins {
+    id 'idea'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'org.springframework.boot' version '2.6.6' apply false
+    id 'io.freefair.lombok' version '6.4.2' apply false
+}
+
+idea {
+    project {
+        languageLevel = 17
+    }
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
+}
+
+allprojects {
+    group "ru.petrelevich"
+
+    repositories {
+        mavenCentral()
+    }
+
+    apply plugin: "io.spring.dependency-management"
+    dependencyManagement {
+        dependencies {
+            imports {
+                mavenBom 'org.springframework.boot:spring-boot-dependencies:2.6.6'
+                mavenBom 'io.netty:netty-bom:4.1.75.Final'
+                mavenBom 'com.linecorp.armeria:armeria-bom:1.15.0'
+            }
+        }
+    }
+
+    configurations.all {
+        resolutionStrategy {
+            failOnVersionConflict()
+        }
+    }
+
+    task managedVersions {
+        doLast {
+            dependencyManagement.managedVersions.each {
+                println it
+            }
+        }
+    }
+}

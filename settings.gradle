@@ -1,0 +1,3 @@
+rootProject.name = 'armeria-boot'
+include 'server-part'
+include 'client-part'

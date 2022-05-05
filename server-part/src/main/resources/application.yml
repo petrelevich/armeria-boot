@@ -1,0 +1,8 @@
+server:
+  port: 8080
+  thread-number: 10
+
+application:
+  rest:
+    api:
+      prefix: /api
