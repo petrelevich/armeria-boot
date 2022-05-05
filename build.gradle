@@ -30,6 +30,7 @@ allprojects {
                 mavenBom 'io.netty:netty-bom:4.1.75.Final'
                 mavenBom 'com.linecorp.armeria:armeria-bom:1.15.0'
             }
+            dependency "com.google.code.findbugs:jsr305:${Versions.jsr305}"
         }
     }
 

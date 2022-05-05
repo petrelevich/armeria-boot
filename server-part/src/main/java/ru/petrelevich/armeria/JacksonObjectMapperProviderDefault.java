@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.linecorp.armeria.common.JacksonObjectMapperProvider;
+import lombok.NonNull;
 
 public class JacksonObjectMapperProviderDefault implements JacksonObjectMapperProvider {
 
@@ -23,7 +24,7 @@ public class JacksonObjectMapperProviderDefault implements JacksonObjectMapperPr
     }
 
     @Override
-    public ObjectMapper newObjectMapper() {
+    public @NonNull ObjectMapper newObjectMapper() {
         return objectMapper;
     }
 }
