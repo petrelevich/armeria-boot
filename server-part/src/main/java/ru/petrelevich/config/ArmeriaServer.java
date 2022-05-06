@@ -10,6 +10,7 @@ import lombok.NonNull;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -17,16 +18,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ArmeriaServer implements InitializingBean, DisposableBean {
     private final Server server;
-    private static final String THREAD_NAME_TEMPLATE = "Main-loop-thread-%s";
+    private static final String THREAD_NAME_TEMPLATE = "Main-loop-%s";
+    private static final String BLOCKED_THREAD_NAME_TEMPLATE = "Blocked-loop-%s";
 
     public ArmeriaServer(int port,
                          int threadNumber,
+                         int threadNumberBlocked,
+                         int requestTimeoutSec,
                          ServerErrorHandler errorHandler,
                          Map<String, Object> pathServices) {
         var sb = Server.builder();
         sb.http(port);
-        sb.workerGroup(makeEventLoopGroup(threadNumber), true);
+        sb.workerGroup(makeEventLoopGroup(threadNumber, THREAD_NAME_TEMPLATE), true);
+        sb.blockingTaskExecutor(makeEventLoopGroup(threadNumberBlocked, BLOCKED_THREAD_NAME_TEMPLATE), true);
         sb.errorHandler(errorHandler);
+        sb.requestTimeout(Duration.ofSeconds(requestTimeoutSec));
         annotatedServices(sb, pathServices);
         server = sb.build();
     }
@@ -41,7 +47,7 @@ public class ArmeriaServer implements InitializingBean, DisposableBean {
         server.stop().join();
     }
 
-    private EventLoopGroup makeEventLoopGroup(int nThreads) {
+    private EventLoopGroup makeEventLoopGroup(int nThreads, String nameTemplate) {
         ThreadFactory threadFactory = new ThreadFactory() {
             private final AtomicInteger threadCounter = new AtomicInteger(0);
 
@@ -49,7 +55,7 @@ public class ArmeriaServer implements InitializingBean, DisposableBean {
             public Thread newThread(@NonNull Runnable run) {
                 var thread = new Thread(run);
                 thread.setDaemon(true);
-                thread.setName(String.format(THREAD_NAME_TEMPLATE, threadCounter.incrementAndGet()));
+                thread.setName(String.format(nameTemplate, threadCounter.incrementAndGet()));
                 return thread;
             }
         };

@@ -1,6 +1,8 @@
 server:
   port: 8080
   thread-number: 10
+  thread-number-blocked: 10
+  request-timeout-sec: 20
 
 application:
   rest:

@@ -10,8 +10,9 @@ targetCompatibility = JavaVersion.VERSION_17
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
-
     implementation 'com.linecorp.armeria:armeria'
+
+    implementation group: 'net.bytebuddy', name: 'byte-buddy', version: '1.12.10'
 
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation 'com.google.code.findbugs:jsr305'
