@@ -3,44 +3,27 @@ package ru.petrelevich.config;
 
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.server.ServerErrorHandler;
-import com.linecorp.armeria.server.annotation.Get;
-import com.linecorp.armeria.server.annotation.Param;
 import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
-import net.bytebuddy.dynamic.scaffold.InstrumentedType;
-import net.bytebuddy.implementation.FixedValue;
-import net.bytebuddy.implementation.Implementation;
 import net.bytebuddy.implementation.MethodCall;
-import net.bytebuddy.implementation.MethodDelegation;
-import net.bytebuddy.implementation.SuperMethodCall;
-import net.bytebuddy.implementation.bytecode.ByteCodeAppender;
-import net.bytebuddy.matcher.ElementMatchers;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.beans.factory.config.EmbeddedValueResolver;
-import org.springframework.cglib.proxy.Enhancer;
-import org.springframework.cglib.proxy.MethodInterceptor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringValueResolver;
 import ru.petrelevich.armeria.GetAnnotation;
 import ru.petrelevich.armeria.GetMapping;
-import ru.petrelevich.armeria.InvocationHandlerArmeria;
 import ru.petrelevich.armeria.ParamAnnotaion;
 import ru.petrelevich.armeria.PathVariable;
 import ru.petrelevich.armeria.RequestMapping;
 import ru.petrelevich.armeria.RequestParam;
-import ru.petrelevich.services.IndexService;
-
-import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,11 +31,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static net.bytebuddy.matcher.ElementMatchers.named;
-
-
-@Configuration
 @Slf4j
+@Configuration
 public class ArmeriaConfig {
     private static final String SPRING_PLACEHOLDER = "(\\$\\{.*})";
     private final Pattern springPlaceHolderPattern;
@@ -101,28 +81,6 @@ public class ArmeriaConfig {
     }
 
     private Object makeArmeriaProxy(Object object) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        /*
-        Class<?> dynamicType = new ByteBuddy()
-                .rebase(object.getClass())
-                .defineMethod("processBB", HttpResponse.class, Visibility.PUBLIC)
-                .withParameters(String.class,  int.class, String.class)
-                .intercept(
-                        MethodCall.invoke(HttpResponse.class.getMethod("ofJson", Object.class))
-                                .withMethodCall(MethodCall.invoke(named("process")).withAllArguments())
-                )
-                .annotateMethod(new GetAnnotation("/param/{name}/{id}"))
-                .annotateParameter(0, new ParamAnnotaion("name"))
-                .annotateParameter(1, new ParamAnnotaion("id"))
-                .annotateParameter(2, new ParamAnnotaion("gender"))
-                .make()
-                .load(object.getClass().getClassLoader(), ClassLoadingStrategy.Default.CHILD_FIRST)
-                .getLoaded();
-
-        var method = dynamicType.getMethod("process", String.class,  int.class, String.class);
-        for (var ann: method.getDeclaredAnnotations()) {
-            System.out.println(ann);
-        }
-*/
         Map<Method, String> methodPath = new HashMap<>();
         Map<Method, List<String>> methodParams = new HashMap<>();
         for (var method : object.getClass().getMethods()) {

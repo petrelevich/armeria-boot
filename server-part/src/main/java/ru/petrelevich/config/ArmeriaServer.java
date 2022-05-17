@@ -1,14 +1,24 @@
 package ru.petrelevich.config;
 
 import com.linecorp.armeria.common.Flags;
+import com.linecorp.armeria.common.grpc.GrpcSerializationFormats;
 import com.linecorp.armeria.common.util.TransportType;
+import com.linecorp.armeria.server.HttpServiceWithRoutes;
 import com.linecorp.armeria.server.Server;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.ServerErrorHandler;
+import com.linecorp.armeria.server.docs.DocService;
+import com.linecorp.armeria.server.docs.DocServiceFilter;
+import com.linecorp.armeria.server.grpc.GrpcService;
+import example.armeria.grpc.reactor.Hello;
+import example.armeria.grpc.reactor.HelloServiceGrpc;
+import io.grpc.protobuf.services.ProtoReflectionService;
+import io.grpc.reflection.v1alpha.ServerReflectionGrpc;
 import io.netty.channel.EventLoopGroup;
 import lombok.NonNull;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
+import reactor.HelloServiceImpl;
 
 import java.time.Duration;
 import java.util.Map;
@@ -34,6 +44,7 @@ public class ArmeriaServer implements InitializingBean, DisposableBean {
         sb.errorHandler(errorHandler);
         sb.requestTimeout(Duration.ofSeconds(requestTimeoutSec));
         annotatedServices(sb, pathServices);
+        grpcServices(sb);
         server = sb.build();
     }
 
@@ -69,4 +80,37 @@ public class ArmeriaServer implements InitializingBean, DisposableBean {
             sb.annotatedService(pathService.getKey(), pathService.getValue());
         }
     }
+
+    private void grpcServices(ServerBuilder sb) {
+        final Hello.HelloRequest exampleRequest = Hello.HelloRequest.newBuilder().setName("Armeria").build();
+        final HttpServiceWithRoutes grpcService =
+                GrpcService.builder()
+                        .addService(new HelloServiceImpl())
+                        // See https://github.com/grpc/grpc-java/blob/master/documentation/server-reflection-tutorial.md
+                        .addService(ProtoReflectionService.newInstance())
+                        .supportedSerializationFormats(GrpcSerializationFormats.values())
+                        .enableUnframedRequests(true)
+                        // You can set useBlockingTaskExecutor(true) in order to execute all gRPC
+                        // methods in the blockingTaskExecutor thread pool.
+                        // .useBlockingTaskExecutor(true)
+                        .build();
+        sb.service(grpcService)
+                // You can access the documentation service at http://127.0.0.1:8080/docs.
+                // See https://armeria.dev/docs/server-docservice for more information.
+                .serviceUnder("/docs",
+                        DocService.builder()
+                                .exampleRequests(
+                                        HelloServiceGrpc.SERVICE_NAME,
+                                        "Hello", exampleRequest)
+                                .exampleRequests(
+                                        HelloServiceGrpc.SERVICE_NAME,
+                                        "LazyHello", exampleRequest)
+                                .exampleRequests(
+                                        HelloServiceGrpc.SERVICE_NAME,
+                                        "BlockingHello", exampleRequest)
+                                .exclude(DocServiceFilter.ofServiceName(
+                                        ServerReflectionGrpc.SERVICE_NAME))
+                                .build());
+    }
+
 }
